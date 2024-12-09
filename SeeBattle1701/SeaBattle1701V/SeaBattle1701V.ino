@@ -126,7 +126,6 @@ void loop() {
       break;
     case ENEMY_TURN:
       EnemyCount = 0;
-
       if (Serial1.available()) {
         int message = Serial1.parseInt();
         String s = "b" + String(message);
@@ -141,7 +140,15 @@ void loop() {
           state = MY_TURN;
           Serial.println("State-MY_TURN");
 
-          
+          for (int i = 16; i < 32; i++) {
+            String s = "b" + String(i);
+            String txt = myNex.readStr(s + ".txt");
+            int color = myNex.readNumber(s + ".bco");
+            if (txt != "X" && color != 1760 && color != 63488) {
+              myNex.writeStr("tsw " + s + ",1");
+            }
+          }
+          //счетчик для отображения "Твой ход".
           triggerReady = true;
         }
 
@@ -160,157 +167,124 @@ void loop() {
         if (EnemyCount == 5) {
           state = TOTAL_PLAY;
         }
-          } 
-
-          break;
-    
-          case TOTAL_PLAY:
-            if (myCount == 5) {
-              myNex.writeStr("page page1");
-            }
-            if (EnemyCount == 5) {
-              myNex.writeStr("page page2");
-            }
-            break;
-        }
-
         if (triggerReady == true) {
-
-          //Serial.println("missed");
-          myNex.writeStr("t17.txt", "Приготовьтесь");
-          myNex.writeNum("t17.pco", 63488);
-          
+          myNex.writeStr("t17.txt", "Твой ход");
+          myNex.writeNum("t17.pco", 1760);
           Serial.println("");
           Serial.println("Enemy missed");
 
-          delay(1000);
-
-          for (int i = 16; i < 32; i++) {
-            String s = "b" + String(i);
-            String txt = myNex.readStr(s + ".txt");
-            int color = myNex.readNumber(s + ".bco");
-            if (txt != "X" && txt != "x" && color != 1760 && color != 63488) {
-              myNex.writeStr("tsw " + s + ",1");
-            }
-          }
           triggerReady = false;
-          Serial.println("Operation end");
-          myNex.writeStr("t17.txt", "Твой ход");
-          myNex.writeNum("t17.pco", 1760);
         }
-        
       }
-      
-      void trigger1() {
-        Serial.println("trigger work");
-        myCount = 0;
+
+      break;
+    case TOTAL_PLAY:
+      if (myCount == 5) {
+        myNex.writeStr("page page1");
+      }
+      if (EnemyCount == 5) {
+        myNex.writeStr("page page2");
+      }
+      break;
+  }
+}
+
+void trigger1() {
+  Serial.println("trigger");
+  myCount = 0;
+  for (int i = 16; i < 32; i++) {
+    String s = "b" + String(i) + ".txt";
+    String txt = myNex.readStr(s);
+    if (txt == "x") {
+      Serial.println("x");
+      Serial.println(i);
+
+      tryAim = i - 16;
+      Serial1.print(tryAim);
+
+      if (ArrayEnemy[i - 16] == 0) {
+        myNex.writeStr(s, "X");
+        Serial.println("X");
+        myNex.writeStr("t17.txt", "Ход соперника");
+        myNex.writeNum("t17.pco", 63488);
+        state = ENEMY_TURN;
+      }
+      if (ArrayEnemy[i - 16] == 1) {
+        String s1 = "b" + String(i) + ".bco";
+        myNex.writeNum(s1, 63488);
+        String s = "b" + String(i) + ".txt";
+        myNex.writeStr(s, " ");
+        k1 = 1;
+      }
+      if (ArrayEnemy[i - 16] == 2) {
+        String s1 = "b" + String(i) + ".bco";
+        myNex.writeNum(s1, 1760);
+        String s = "b" + String(i) + ".txt";
+        myNex.writeStr(s, " ");
+        k1 = 1;
+      }
+
+      String s2 = "b" + String(i);
+      String s3 = "tsw " + s2 + ",0";
+      myNex.writeStr(s3);
+
+      for (int i = 16; i < 32; i++) {
+        String s = "b" + String(i);
+        String txt = myNex.readStr(s + ".txt");
+        long color = myNex.readNumber(s + ".bco");
+        if (color == 1760 || color == 63488) {
+          myCount++;
+        }
+      }
+      Serial.println("myCount");
+      Serial.println(myCount);
+      if (myCount == 5) {
+        state = TOTAL_PLAY;
+      }
+
+      if (k1 == 1) {
         for (int i = 16; i < 32; i++) {
-          String s = "b" + String(i) + ".txt";
-          String txt = myNex.readStr(s);
-          if (txt == "x") {
-            Serial.println("x");
-            Serial.println(i);
-
-            tryAim = i - 16;
-            Serial1.print(tryAim);
-
-            if (ArrayEnemy[i - 16] == 0) {
-              myNex.writeStr(s, "X");
-              Serial.println("X");
-              myNex.writeStr("t17.txt", "Ход соперника");
-              myNex.writeNum("t17.pco", 63488);
-              state = ENEMY_TURN;
-
-              k1 = 0;
-            }
-            if (ArrayEnemy[i - 16] == 1) {
-              String s1 = "b" + String(i) + ".bco";
-              myNex.writeNum(s1, 63488);
-              String s = "b" + String(i) + ".txt";
-              myNex.writeStr(s, " ");
-              myNex.writeStr("t17.txt", "Подождите");
-              myNex.writeNum("t17.pco", 63488);
-              k1 = 1;
-            }
-            if (ArrayEnemy[i - 16] == 2) {
-              String s1 = "b" + String(i) + ".bco";
-              myNex.writeNum(s1, 1760);
-              String s = "b" + String(i) + ".txt";
-              myNex.writeStr(s, " ");
-              myNex.writeStr("t17.txt", "Подождите");
-              myNex.writeNum("t17.pco", 63488);
-              k1 = 1;
-            }
-
-            String s2 = "b" + String(i);
-            String s3 = "tsw " + s2 + ",0";
-            myNex.writeStr(s3);
-
-            for (int i = 16; i < 32; i++) {
-              String s = "b" + String(i);
-              String txt = myNex.readStr(s + ".txt");
-              long color = myNex.readNumber(s + ".bco");
-              if (color == 1760 || color == 63488) {
-                myCount++;
-              }
-            }
-            Serial.println("myCount");
-            Serial.println(myCount);
-            if (myCount == 5) {
-              state = TOTAL_PLAY;
-            }
-
-            if (k1 == 1) {
-              for (int i = 16; i < 32; i++) {
-                String s = "b" + String(i);
-                String txt = myNex.readStr(s + ".txt");
-                int color = myNex.readNumber(s + ".bco");
-                myNex.writeStr("tsw " + s + ",1");
-              }
-            }
-            if (k1 == 1){
-              myNex.writeStr("t17.txt", "Твой ход");
-              myNex.writeNum("t17.pco", 1760);
-            }
-            else {
-              myNex.writeStr("t17.txt", "Ход соперника");
-              myNex.writeNum("t17.pco", 63488);
-            }
-            k1 = 0;            
-            break;
-          }
-        } 
-      }
-
-      void trigger0() {
-        if (state1 == 0) {
-          Serial.println("111");
-          for (int i = 0; i < 16; i++) {
-            String myString = String(i);
-            String sendString = "b" + myString + ".txt";
-            String txt = myNex.readStr(sendString);
-            int a = txt.toInt();
-            ArrayOur[i] = a;
-          }
-
-          Serial.println("\nmartix out");
-
-          // Если двухпалубный корабль стоит в начале массива.
-          int CountNumberTwo = 0;
-          int CountNumberOne = 0;
-
-          for (int i = 0; i < 16; i++) {
-            if (ArrayOur[i] == 2) CountNumberTwo++;
-            if (ArrayOur[i] == 1) CountNumberOne++;
-          }
-          if (CountNumberTwo != 2) ArrayOur[0] = 2;
-          else if (CountNumberOne != 3) ArrayOur[0] = 1;
-
-          // Вывод полученного массива в монитор порта.
-          for (int i = 0; i < 16; i++) {
-            Serial.println(ArrayOur[i]);
-          }
-          state = WAITING;
-          state1 = 1;
+          String s = "b" + String(i);
+          String txt = myNex.readStr(s + ".txt");
+          int color = myNex.readNumber(s + ".bco");
+          myNex.writeStr("tsw " + s + ",1");
         }
       }
+      k1 = 0;
+      break;
+    }
+  }
+}
+
+void trigger0() {
+  if (state1 == 0) {
+    Serial.println("111");
+    for (int i = 0; i < 16; i++) {
+      String myString = String(i);
+      String sendString = "b" + myString + ".txt";
+      String txt = myNex.readStr(sendString);
+      int a = txt.toInt();
+      ArrayOur[i] = a;
+    }
+
+    Serial.println("\nmartix out");
+
+    // Если двухпалубный корабль стоит в начале массива.
+    int CountNumberTwo = 0;
+    int CountNumberOne = 0;
+
+    for (int i = 0; i < 16; i++) {
+      if (ArrayOur[i] == 2) CountNumberTwo++;
+      if (ArrayOur[i] == 1) CountNumberOne++;
+    }
+    if (CountNumberTwo != 2) ArrayOur[0] = 2;
+    else if (CountNumberOne != 3) ArrayOur[0] = 1;
+
+    // Вывод полученного массива в монитор порта.
+    for (int i = 0; i < 16; i++) {
+      Serial.println(ArrayOur[i]);
+    }
+    state = WAITING;
+    state1 = 1;
+  }
+}
